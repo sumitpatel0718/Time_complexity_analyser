@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Refined Time Complexity Analyzer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        textarea {
+            width: 100%;
+            height: 200px;
+            margin-bottom: 10px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #e9ecef;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Refined Time Complexity Analyzer</h1>
+        <textarea id="codeInput" placeholder="Paste your code here..."></textarea>
+        <button onclick="analyzeComplexity()">Analyze</button>
+        <div id="result"></div>
+    </div>
+
+    <script>
+        function analyzeComplexity() {
+            const code = document.getElementById('codeInput').value;
+            const result = document.getElementById('result');
+            result.innerHTML = ''; // Clear previous results
+
+            try {
+                // Create a function from the input code
+                const algorithm = new Function('n', code + '\nreturn algorithm(n);');
+
+                // Dynamically increasing input sizes
+                const sizes = [10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000];
+                let complexityDetected = 'Unknown';
+                let previousTime = 0;
+
+                // Test the function across multiple input sizes
+                for (let i = 0; i < sizes.length; i++) {
+                    const size = sizes[i];
+                    const start = performance.now();
+                    algorithm(size);
+                    const end = performance.now();
+                    const timeTaken = (end - start) / 1000; // Convert to seconds
+
+                    result.innerHTML += `n = ${size}: ${timeTaken.toFixed(6)} seconds<br>`;
+
+                    // Estimate the complexity based on timing patterns
+                    if (i > 0) {
+                        const timeRatio = timeTaken / previousTime;
+                        const sizeRatio = sizes[i] / sizes[i - 1];
+
+                        // Check for constant time
+                        if (timeRatio < 1.1) {
+                            complexityDetected = 'O(1)';
+                            break;
+                        }
+                        // Check for logarithmic time (O(log n))
+                        if (timeRatio < Math.log(sizeRatio + 1)) {
+                            complexityDetected = 'O(log n)';
+                            break;
+                        }
+                        // Check for linear time (O(n))
+                        if (Math.abs(timeRatio - sizeRatio) < sizeRatio * 0.1) {
+                            complexityDetected = 'O(n)';
+                            break;
+                        }
+                        // Check for n log n time (O(n log n))
+                        if (Math.abs(timeRatio - sizeRatio * Math.log(sizeRatio + 1)) < sizeRatio * 0.1) {
+                            complexityDetected = 'O(n log n)';
+                            break;
+                        }
+                        // Check for quadratic time (O(n^2))
+                        if (Math.abs(timeRatio - sizeRatio * sizeRatio) < sizeRatio * 0.1) {
+                            complexityDetected = 'O(n^2)';
+                            break;
+                        }
+                    }
+
+                    previousTime = timeTaken;
+
+                    // Stop if the function takes more than 3 seconds for an input
+                    if (timeTaken > 3) {
+                        complexityDetected = 'O(n^2) or higher';
+                        break;
+                    }
+                }
+
+                result.innerHTML += `<br>Estimated Time Complexity: ${complexityDetected}`;
+
+            } catch (error) {
+                result.innerText = `Error: ${error.message}`;
+            }
+        }
+    </script>
+</body>
+</html>
